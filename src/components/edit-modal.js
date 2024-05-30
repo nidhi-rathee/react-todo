@@ -9,12 +9,14 @@ import {
   ModalBody,
   ModalCloseButton,
   Textarea,
+  useToast,
 } from "@chakra-ui/react";
 import { useState } from "react";
 
 function EditModal(props) {
   const { activeItem, isOpen, onClose, saveDetail } = props;
   const [item, setItem] = useState(activeItem);
+  const toast = useToast();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,7 +27,7 @@ function EditModal(props) {
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Edit item</ModalHeader>
+        <ModalHeader>Update task</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Input
