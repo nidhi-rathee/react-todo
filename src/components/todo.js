@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FaEllipsisH } from "react-icons/fa";
 import {
   Box,
   Input,
@@ -10,10 +11,25 @@ import {
   Checkbox,
   CheckboxGroup,
   Badge,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuItemOption,
+  MenuGroup,
+  MenuOptionGroup,
+  MenuDivider,
 } from "@chakra-ui/react";
-import { AddIcon, DeleteIcon, EditIcon, CalendarIcon } from "@chakra-ui/icons";
+import {
+  AddIcon,
+  DeleteIcon,
+  EditIcon,
+  CalendarIcon,
+  ChevronDownIcon,
+} from "@chakra-ui/icons";
 import { useDisclosure } from "@chakra-ui/react";
 import EditModal from "./edit-modal";
+import DeleteDialog from "../delete-dialog";
 
 //  To get data from local storage
 
@@ -29,8 +45,25 @@ function Todo() {
   const [items, setItems] = useState(getItemsFromLocalStorage());
   const [activeItem, setActiveItem] = useState(null);
   const [inputItem, setInputItem] = useState("");
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isEditModelOpen,
+    onOpen: OnEditModelOpen,
+    onClose: onEditModelClose,
+  } = useDisclosure();
+  const {
+    isOpen: isDeleteModalOpen,
+    onOpen: onDeleteModalOpen,
+    onClose: onDeleteModalClose,
+  } = useDisclosure();
+
+  const cancelRef = React.useRef();
   const toast = useToast();
+
+  const {
+    isOpen: isActionMenuOpen,
+    onOpen: onActionMenuOpen,
+    onClose: onActionMenuClose,
+  } = useDisclosure();
 
   // add data to local storage
   useEffect(() => {
@@ -63,7 +96,7 @@ function Todo() {
 
   function openModal(item) {
     setActiveItem({ ...item });
-    onOpen();
+    OnEditModelOpen();
   }
 
   function saveDetail(item) {
@@ -76,11 +109,11 @@ function Todo() {
       description: "Your item has been updated",
       position: "top-right",
       status: "success",
-      duration: 9000,
+      duration: 500,
       isClosable: true,
     });
     setItems(itemsClone);
-    onClose();
+    onEditModelClose();
   }
 
   function deleteItem(id) {
@@ -89,6 +122,14 @@ function Todo() {
         return item.id !== id;
       })
     );
+    toast({
+      title: `${activeItem.id} deleted`,
+      description: "Your item has been deleted",
+      position: "top-right",
+      status: "error",
+      duration: 3000,
+      isClosable: true,
+    });
   }
 
   function markComplete(id) {
@@ -98,11 +139,10 @@ function Todo() {
     setItems(updatedItems);
   }
 
-  function toggleStatus(id) {
+  function selectTodo(id) {
     const index = items.findIndex((itemIndex) => itemIndex.id === id);
     const updatedItems = [...items];
-    updatedItems[index].status =
-      updatedItems[index].status === "active" ? "inactive" : "active";
+    updatedItems[index].status = updatedItems[index].status === "active";
     setItems(updatedItems);
   }
 
@@ -130,7 +170,7 @@ function Todo() {
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
-      <Heading>Todo list app</Heading>
+      <Heading className="heading">Todo list app</Heading>
 
       <Box mt={10} w="50%" display="flex">
         <Input
@@ -167,7 +207,7 @@ function Todo() {
               type="checkbox"
               colorScheme="green"
               checked={item.status === "inactive"}
-              onChange={() => toggleStatus(item.id)}
+              onChange={() => selectTodo(item.id)}
             />
             <Box
               textTransform="capitalize"
@@ -204,22 +244,55 @@ function Todo() {
                 size="sm"
                 aria-label="Delete item"
                 icon={<DeleteIcon />}
-                onClick={() => deleteItem(item.id)}
+                onClick={() => {
+                  setActiveItem(item);
+                  onDeleteModalOpen();
+                }}
               ></IconButton>
             </Box>
             <Box>
               <span>{getDueIn(item.createdAt)}</span>
             </Box>
+            <IconButton
+              size="sm"
+              aria-label="Actions on item"
+              icon={<FaEllipsisH />}
+              onClick={() => {
+                setActiveItem(item);
+                onActionMenuOpen();
+              }}
+            ></IconButton>
           </Box>
         ))}
       </Box>
-      {isOpen && (
+      {/* Edit modal */}
+      {isEditModelOpen && (
         <EditModal
-          isOpen={isOpen}
-          onClose={onClose}
+          isOpen={isEditModelOpen}
+          onClose={onEditModelClose}
           activeItem={activeItem}
           saveDetail={saveDetail}
         />
+      )}
+      {/* Alert dialog for deletion */}
+      <DeleteDialog
+        isOpen={isDeleteModalOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onDeleteModalClose}
+        activeItem={activeItem}
+        deleteItem={deleteItem}
+        cancelRef={cancelRef}
+      />
+
+      {/* Actions menu */}
+      {isActionMenuOpen && (
+        <Menu>
+          <MenuList>
+            <MenuItem>Edit</MenuItem>
+            <MenuItem>Delete</MenuItem>
+            <MenuItem>Mark as Complete</MenuItem>
+          </MenuList>
+        </Menu>
       )}
     </Box>
   );
